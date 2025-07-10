@@ -74,3 +74,48 @@ vim.keymap.set("n", "<leader><leader>", function()
     vim.cmd("so")
 end)
 
+-- Java specific keymaps
+vim.keymap.set("n", "<leader>js", function()
+    -- Force start nvim-java
+    require('java').setup()
+    print("nvim-java setup initiated...")
+end, { desc = 'Java: Force Start' })
+
+vim.keymap.set("n", "<leader>jl", function()
+    -- Check LSP status
+    local clients = vim.lsp.get_active_clients()
+    print("Active LSP clients: " .. #clients)
+    for i, client in ipairs(clients) do
+        print("  " .. i .. ". " .. client.name)
+    end
+end, { desc = 'Java: List LSP Clients' })
+
+vim.keymap.set("n", "<leader>jv", function()
+    local clients = vim.lsp.get_active_clients({ name = 'jdtls' })
+    if #clients == 0 then
+        print("No JDTLS client found. Try <leader>js first, then open a Java file.")
+        return
+    end
+    require('java').settings.change_runtime()
+end, { desc = 'Java: Change Version' })
+
+vim.keymap.set("n", "<leader>jr", function()
+    require('java').runner.built_in.run_app()
+end, { desc = 'Java: Run Application' })
+
+vim.keymap.set("n", "<leader>jt", function()
+    require('java').test.run_current_class()
+end, { desc = 'Java: Test Current Class' })
+
+vim.keymap.set("n", "<leader>jm", function()
+    require('java').test.run_current_method()
+end, { desc = 'Java: Test Current Method' })
+
+vim.keymap.set("n", "<leader>jd", function()
+    require('java').test.debug_current_method()
+end, { desc = 'Java: Debug Current Method' })
+
+vim.keymap.set("n", "<leader>jp", function()
+    require('java').profile.ui()
+end, { desc = 'Java: Profiles UI' })
+
