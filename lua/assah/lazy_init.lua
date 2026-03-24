@@ -13,7 +13,7 @@ vim.opt.rtp:prepend(lazypath)
 
 require("lazy").setup({
     spec = {
-        { import = "theprimeagen.lazy" },
+        { import = "assah.lazy" },
     },
     change_detection = { notify = false }
 })
