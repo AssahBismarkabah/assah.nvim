@@ -119,3 +119,7 @@ vim.keymap.set("n", "<leader>jp", function()
     require('java').profile.ui()
 end, { desc = 'Java: Profiles UI' })
 
+
+-- [[
+-- vim.keymap.set("n", "<leader>r", ":set norelativenumber!<CR>", { noremap = true, silent = true })
+-- ]]

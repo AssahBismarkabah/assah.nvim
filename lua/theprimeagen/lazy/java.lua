@@ -9,15 +9,6 @@ return {
     'MunifTanjim/nui.nvim',
     'neovim/nvim-lspconfig',
     'mfussenegger/nvim-dap',
-    {
-      'williamboman/mason.nvim',
-      opts = {
-        registries = {
-          'github:nvim-java/mason-registry',
-          'github:mason-org/mason-registry',
-        },
-      },
-    },
   },
   config = function()
     require('java').setup({
@@ -33,6 +24,31 @@ return {
         '.git',
       },
       
+      -- Language server settings
+      lsp = {
+        server_settings = {
+          -- Specify the bundles to be loaded by the language server
+          bundles = (function()
+            local bundles = {}
+            local mason_pkg_path = vim.fn.stdpath('data') .. '/mason/packages/'
+            local java_test_pkg = mason_pkg_path .. 'java-test/extension/server/com.microsoft.java.test.plugin-*.jar'
+            local java_decompiler_pkg = mason_pkg_path .. 'vscode-java-decompiler/server/fernflower.jar'
+
+            local test_bundle = vim.fn.glob(java_test_pkg, 1)
+            if test_bundle[1] then
+              vim.list_extend(bundles, test_bundle)
+            end
+
+            local decompiler_bundle = vim.fn.glob(java_decompiler_pkg)
+            if decompiler_bundle ~= '' then
+              table.insert(bundles, decompiler_bundle)
+            end
+
+            return bundles
+          end)(),
+        },
+      },
+
       -- Auto-install JDK via Mason
       jdk = {
         auto_install = true,
