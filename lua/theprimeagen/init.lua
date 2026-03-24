@@ -78,3 +78,11 @@ autocmd('LspAttach', {
 vim.g.netrw_browse_split = 0
 vim.g.netrw_banner = 0
 vim.g.netrw_winsize = 25
+
+autocmd('FileType', {
+    group = ThePrimeagenGroup,
+    pattern = 'netrw',
+    callback = function(args)
+        vim.keymap.set('n', 'f', '%', { buffer = args.buf, remap = true })
+    end,
+})
