@@ -33,8 +33,10 @@ return {
         -- Fidget (LSP progress indicator)
         require("fidget").setup({})
 
-        -- Mason (tool installer)
+        -- Mason: install all tool binaries
         require("mason").setup()
+
+        -- Mason-lspconfig: wire Mason binaries to LSP server configs
         require("mason-lspconfig").setup({
             ensure_installed = {
                 "lua_ls",
@@ -46,15 +48,13 @@ return {
             },
         })
 
-        -- Global LSP defaults for all servers
+        -- Global LSP defaults
         vim.lsp.config('*', {
             capabilities = capabilities,
-            root_markers = { '.git' },
         })
 
-        -- Lua language server
+        -- Per-server settings only (no root_markers/filetype overrides — use server defaults)
         vim.lsp.config('lua_ls', {
-            root_markers = { '.luarc.json', '.luarc.jsonc', '.git' },
             settings = {
                 Lua = {
                     runtime = { version = 'LuaJIT' },
@@ -69,9 +69,7 @@ return {
             },
         })
 
-        -- Zig language server
         vim.lsp.config('zls', {
-            root_markers = { '.git', 'build.zig', 'zls.json' },
             settings = {
                 zls = {
                     enable_inlay_hints = true,
@@ -83,27 +81,7 @@ return {
         vim.g.zig_fmt_parse_errors = 0
         vim.g.zig_fmt_autosave = 0
 
-        -- Rust
-        vim.lsp.config('rust_analyzer', {
-            root_markers = { 'Cargo.toml', 'rust-project.json', '.git' },
-        })
-
-        -- Go
-        vim.lsp.config('gopls', {
-            root_markers = { 'go.work', 'go.mod', '.git' },
-        })
-
-        -- Python
-        vim.lsp.config('pyright', {
-            root_markers = { 'pyproject.toml', 'setup.py', 'setup.cfg', 'requirements.txt', '.git' },
-        })
-
-        -- TypeScript/JavaScript
-        vim.lsp.config('ts_ls', {
-            root_markers = { 'tsconfig.json', 'package.json', 'jsconfig.json', '.git' },
-        })
-
-        -- Enable all LSP servers (auto-attaches based on filetype)
+        -- Enable all servers
         vim.lsp.enable({
             'lua_ls',
             'rust_analyzer',
@@ -113,19 +91,17 @@ return {
             'zls',
         })
 
-        -- LspAttach autocmd for buffer-local settings
+        -- LspAttach: completion, auto-format, keymaps
         vim.api.nvim_create_autocmd('LspAttach', {
             group = vim.api.nvim_create_augroup('my_lsp_attach', {}),
             callback = function(ev)
                 local bufnr = ev.buf
                 local client = vim.lsp.get_client_by_id(ev.data.client_id)
 
-                -- Enable completion (Neovim 0.12+ native API)
                 if client and client:supports_method('textDocument/completion') then
                     vim.lsp.completion.enable(true, client.id, bufnr, { autotrigger = true })
                 end
 
-                -- Auto-format on save
                 if client and client:supports_method('textDocument/formatting') then
                     vim.api.nvim_create_autocmd('BufWritePre', {
                         buffer = bufnr,
@@ -135,7 +111,6 @@ return {
                     })
                 end
 
-                -- Buffer-local keymaps
                 local opts = { buffer = bufnr }
                 vim.keymap.set('n', 'gD', vim.lsp.buf.declaration, opts)
                 vim.keymap.set('n', 'gd', vim.lsp.buf.definition, opts)
@@ -148,7 +123,7 @@ return {
             end,
         })
 
-        -- cmp setup (still works alongside vim.lsp.completion.enable)
+        -- cmp setup
         local cmp_select = { behavior = cmp.SelectBehavior.Select }
         cmp.setup({
             snippet = {
@@ -170,7 +145,7 @@ return {
             })
         })
 
-        -- Diagnostics config
+        -- Diagnostics
         vim.diagnostic.config({
             virtual_text = {
                 prefix = '●',
@@ -186,7 +161,7 @@ return {
                 },
             },
             underline = true,
-            update_in_insert = false,
+            update_in_insert = true,
             severity_sort = true,
             float = {
                 focusable = false,
