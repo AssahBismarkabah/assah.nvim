@@ -15,9 +15,10 @@ return {
     },
 
     config = function()
-        require("conform").setup({
+        local conform = require("conform")
+        conform.setup({
             formatters_by_ft = {
-                java = { "google-java-format" },
+                lua = { "stylua" },
             }
         })
         local cmp = require('cmp')

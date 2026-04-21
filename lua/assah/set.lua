@@ -1,3 +1,5 @@
+vim.env.SSL_CERT_FILE = "/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/site-packages/certifi/cacert.pem"
+
 vim.opt.guicursor = ""
 
 vim.opt.nu = true
