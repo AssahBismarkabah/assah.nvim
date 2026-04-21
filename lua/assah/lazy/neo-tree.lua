@@ -11,7 +11,6 @@ return {
     },
     opts = {
         close_if_last_window = true,
-        popup_border_style = "rounded",
         enable_git_status = true,
         enable_diagnostics = true,
         sources = {
@@ -33,9 +32,6 @@ return {
                     ".git",
                     ".DS_Store",
                 },
-                never_show = {
-                    ".stversion",
-                },
             },
             use_libuv_file_watcher = true,
         },
@@ -51,7 +47,6 @@ return {
                 with_expanders = true,
                 expander_collapsed = "",
                 expander_expanded = "",
-                expander_highlight = "NeoTreeExpander",
             },
             git_status = {
                 symbols = {
@@ -68,4 +63,19 @@ return {
             },
         },
     },
+    config = function(_, opts)
+        require("neo-tree").setup(opts)
+
+        -- Remove visual distinction between neo-tree sidebar and editor
+        vim.api.nvim_create_autocmd("User", {
+            pattern = "NeoTreeBufferEnter",
+            callback = function()
+                local normal_bg = vim.fn.synIDattr(vim.fn.synIDtrans(vim.fn.hlID("Normal")), "bg#")
+                vim.api.nvim_set_hl(0, "NeoTreeNormal", { bg = normal_bg ~= "" and normal_bg or nil })
+                vim.api.nvim_set_hl(0, "NeoTreeNormalNC", { bg = normal_bg ~= "" and normal_bg or nil })
+                vim.api.nvim_set_hl(0, "NeoTreeWinSeparator", { link = "VertSplit" })
+                vim.api.nvim_set_hl(0, "NeoTreeVertSplit", { link = "VertSplit" })
+            end,
+        })
+    end,
 }

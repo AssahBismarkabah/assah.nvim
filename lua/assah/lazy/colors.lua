@@ -4,6 +4,12 @@ function ColorMyPencils(color)
 
 	vim.api.nvim_set_hl(0, "Normal", { bg = "none" })
 	vim.api.nvim_set_hl(0, "NormalFloat", { bg = "none" })
+
+	-- Remove inactive window dimming — make neo-tree sidebar match editor
+	vim.api.nvim_set_hl(0, "NeoTreeNormal", { bg = "none" })
+	vim.api.nvim_set_hl(0, "NeoTreeNormalNC", { bg = "none" })
+	vim.api.nvim_set_hl(0, "NormalNC", { bg = "none" }) -- inactive editor windows
+	vim.api.nvim_set_hl(0, "ColorColumn", { bg = "none" }) -- remove inactive window column
 end
 
 return {
@@ -80,6 +86,12 @@ return {
                 disable_background = true,
                 styles = {
                     italic = false,
+                },
+                highlight_groups = {
+                    Normal = { bg = "NONE" },
+                    NormalNC = { bg = "NONE" },
+                    NormalFloat = { bg = "NONE" },
+                    ColorColumn = { bg = "NONE" },
                 },
             })
 
