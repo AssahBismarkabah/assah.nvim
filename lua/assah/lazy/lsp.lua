@@ -81,6 +81,27 @@ return {
         vim.g.zig_fmt_parse_errors = 0
         vim.g.zig_fmt_autosave = 0
 
+        vim.lsp.config('rust_analyzer', {
+            settings = {
+                ['rust-analyzer'] = {
+                    check = {
+                        command = 'check',
+                        workspace = true,
+                        onSave = true,
+                    },
+                    diagnostics = {
+                        enable = true,
+                        enableExplanations = true,
+                    },
+                    cargo = {
+                        loadOutDirsFromCheck = true,
+                        buildScripts = { enable = true },
+                    },
+                    procMacro = { enable = true },
+                },
+            },
+        })
+
         -- Enable all servers
         vim.lsp.enable({
             'lua_ls',
@@ -98,9 +119,8 @@ return {
                 local bufnr = ev.buf
                 local client = vim.lsp.get_client_by_id(ev.data.client_id)
 
-                if client and client:supports_method('textDocument/completion') then
-                    vim.lsp.completion.enable(true, client.id, bufnr, { autotrigger = true })
-                end
+                -- NOTE: vim.lsp.completion.enable() removed - nvim-cmp handles completion
+                -- Calling both can interfere with rust-analyzer diagnostic publishing
 
                 if client and client:supports_method('textDocument/formatting') then
                     vim.api.nvim_create_autocmd('BufWritePre', {
