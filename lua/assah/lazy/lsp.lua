@@ -3,7 +3,6 @@ return {
     dependencies = {
         "stevearc/conform.nvim",
         "williamboman/mason.nvim",
-        "williamboman/mason-lspconfig.nvim",
         "hrsh7th/cmp-nvim-lsp",
         "hrsh7th/cmp-buffer",
         "hrsh7th/cmp-path",
@@ -15,12 +14,6 @@ return {
     },
 
     config = function()
-        local conform = require("conform")
-        conform.setup({
-            formatters_by_ft = {
-                lua = { "stylua" },
-            }
-        })
         local cmp = require('cmp')
         local cmp_lsp = require("cmp_nvim_lsp")
         local capabilities = vim.tbl_deep_extend(
@@ -29,60 +22,96 @@ return {
             vim.lsp.protocol.make_client_capabilities(),
             cmp_lsp.default_capabilities())
 
-        require("fidget").setup({})
-        require("mason").setup()
-        require("mason-lspconfig").setup({
-            ensure_installed = {
-                "lua_ls",
-                "rust_analyzer",
-                "gopls",
-            },
-            handlers = {
-                function(server_name) -- default handler (optional)
-                    require("lspconfig")[server_name].setup {
-                        capabilities = capabilities
-                    }
-                end,
-
-                zls = function()
-                    local lspconfig = require("lspconfig")
-                    lspconfig.zls.setup({
-                        root_dir = lspconfig.util.root_pattern(".git", "build.zig", "zls.json"),
-                        settings = {
-                            zls = {
-                                enable_inlay_hints = true,
-                                enable_snippets = true,
-                                warn_style = true,
-                            },
-                        },
-                    })
-                    vim.g.zig_fmt_parse_errors = 0
-                    vim.g.zig_fmt_autosave = 0
-
-                end,
-                ["lua_ls"] = function()
-                    local lspconfig = require("lspconfig")
-                    lspconfig.lua_ls.setup {
-                        capabilities = capabilities,
-                        settings = {
-                            Lua = {
-                                runtime = { version = "Lua 5.1" },
-                                diagnostics = {
-                                    globals = { "bit", "vim", "it", "describe", "before_each", "after_each" },
-                                }
-                            }
-                        }
-                    }
-                end,
+        -- Conform (formatter)
+        require("conform").setup({
+            formatters_by_ft = {
+                lua = { "stylua" },
             }
         })
 
-        local cmp_select = { behavior = cmp.SelectBehavior.Select }
+        -- Fidget (LSP progress indicator)
+        require("fidget").setup({})
 
+        -- Mason (tool installer)
+        require("mason").setup()
+
+        -- LSP server configs using Neovim 0.12+ API
+        vim.lsp.config("lua_ls", {
+            capabilities = capabilities,
+            settings = {
+                Lua = {
+                    runtime = { version = "Lua 5.1" },
+                    diagnostics = {
+                        globals = { "bit", "vim", "it", "describe", "before_each", "after_each" },
+                    }
+                }
+            }
+        })
+
+        vim.lsp.config("zls", {
+            capabilities = capabilities,
+            root_markers = {".git", "build.zig", "zls.json"},
+            settings = {
+                zls = {
+                    enable_inlay_hints = true,
+                    enable_snippets = true,
+                    warn_style = true,
+                },
+            },
+        })
+        vim.g.zig_fmt_parse_errors = 0
+        vim.g.zig_fmt_autosave = 0
+
+        vim.lsp.config("rust_analyzer", { capabilities = capabilities })
+        vim.lsp.config("gopls", { capabilities = capabilities })
+        vim.lsp.config("pyright", { capabilities = capabilities })
+        vim.lsp.config("ts_ls", { capabilities = capabilities })
+
+        -- Enable all LSP servers
+        vim.lsp.enable({
+            "lua_ls",
+            "rust_analyzer",
+            "gopls",
+            "pyright",
+            "ts_ls",
+            "zls",
+        })
+
+        -- LspAttach autocmd for buffer-local settings and keymaps
+        vim.api.nvim_create_autocmd("LspAttach", {
+            callback = function(args)
+                local bufnr = args.buf
+                local client = vim.lsp.get_client_by_id(args.data.client_id)
+
+                vim.bo[bufnr].omnifunc = "v:lua.vim.lsp.omnifunc"
+
+                local opts = { buffer = bufnr }
+                vim.keymap.set("n", "gD", vim.lsp.buf.declaration, opts)
+                vim.keymap.set("n", "gd", vim.lsp.buf.definition, opts)
+                vim.keymap.set("n", "K", vim.lsp.buf.hover, opts)
+                vim.keymap.set("n", "gi", vim.lsp.buf.implementation, opts)
+                vim.keymap.set("n", "<C-k>", vim.lsp.buf.signature_help, opts)
+                vim.keymap.set("n", "<leader>rn", vim.lsp.buf.rename, opts)
+                vim.keymap.set({ "n", "v" }, "<leader>ca", vim.lsp.buf.code_action, opts)
+                vim.keymap.set("n", "gr", vim.lsp.buf.references, opts)
+
+                if client and client:supports_method("textDocument/formatting") then
+                    vim.api.nvim_create_autocmd("BufWritePre", {
+                        buffer = bufnr,
+                        callback = function()
+                            vim.lsp.buf.format({ bufnr = bufnr })
+                        end,
+                    })
+                end
+            end,
+        })
+
+        -- Completion setup
+        local cmp_select = { behavior = cmp.SelectBehavior.Select }
         cmp.setup({
             snippet = {
                 expand = function(args)
-                    require('luasnip').lsp_expand(args.body) -- For `luasnip` users.
+                    require('luasnip').lsp_expand(args.body)
                 end,
             },
             mapping = cmp.mapping.preset.insert({
@@ -93,14 +122,30 @@ return {
             }),
             sources = cmp.config.sources({
                 { name = 'nvim_lsp' },
-                { name = 'luasnip' }, -- For luasnip users.
+                { name = 'luasnip' },
             }, {
                 { name = 'buffer' },
             })
         })
 
+        -- Diagnostics config
         vim.diagnostic.config({
-            -- update_in_insert = true,
+            virtual_text = {
+                prefix = '●',
+                source = 'if_many',
+                spacing = 4,
+            },
+            signs = {
+                text = {
+                    [vim.diagnostic.severity.ERROR] = '■',
+                    [vim.diagnostic.severity.WARN] = '!',
+                    [vim.diagnostic.severity.INFO] = '•',
+                    [vim.diagnostic.severity.HINT] = 'i',
+                },
+            },
+            underline = true,
+            update_in_insert = false,
+            severity_sort = true,
             float = {
                 focusable = false,
                 style = "minimal",
